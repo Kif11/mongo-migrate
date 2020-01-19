@@ -96,8 +96,8 @@ func Version() (uint64, string, error) {
 
 // Up performs "up" migration using registered migrations.
 // Detailed description available in Migrate.Up().
-func Up(n int) error {
-	return globalMigrate.Up(n)
+func Up(n int, dryRun bool) error {
+	return globalMigrate.Up(n, dryRun)
 }
 
 // Down performs "down" migration using registered migrations.

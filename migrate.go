@@ -3,6 +3,7 @@ package migrate
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/pkg/errors"
@@ -173,7 +174,7 @@ func (m *Migrate) SetVersion(version uint64, description string) error {
 // Up performs "up" migrations to latest available version.
 // If n<=0 all "up" migrations with newer versions will be performed.
 // If n>0 only n migrations with newer version will be performed.
-func (m *Migrate) Up(n int) error {
+func (m *Migrate) Up(n int, dryRun bool) error {
 	currentVersion, _, err := m.Version()
 	if err != nil {
 		return err
@@ -185,13 +186,24 @@ func (m *Migrate) Up(n int) error {
 
 	for i, p := 0, 0; i < len(m.migrations) && p < n; i++ {
 		migration := m.migrations[i]
+
+		if dryRun {
+			if err := migration.Up(m.db); err != nil {
+				return err
+			}
+			break
+		}
+
 		if migration.Version <= currentVersion || migration.Up == nil {
 			continue
 		}
 		p++
+
+		fmt.Printf("Runing migration - %s, version %d\n", migration.Description, migration.Version)
 		if err := migration.Up(m.db); err != nil {
 			return err
 		}
+
 		if err := m.SetVersion(migration.Version, migration.Description); err != nil {
 			return err
 		}
